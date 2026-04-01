@@ -16,5 +16,33 @@ RUNNER_TOKEN=$(gh api "repos/${OWNER_REPO}/actions/runners/registration-token" -
 echo "Generating CA (if needed)..."
 ./generate-ca.sh
 
-echo "Starting docker compose..."
-RUNNER_TOKEN="$RUNNER_TOKEN" RUNNER_REPO="$REPO_URL" docker compose up --build
+echo "Starting containers..."
+RUNNER_TOKEN="$RUNNER_TOKEN" RUNNER_REPO="$REPO_URL" docker compose up --build -d
+
+# Wait for the runner to come online
+echo "Waiting for runner to start..."
+while true; do
+  line=$(docker compose logs runner --tail 1 2>/dev/null)
+  if echo "$line" | grep -q "Listening for Jobs"; then
+    echo "Runner is online."
+    break
+  fi
+  sleep 1
+done
+
+# Stream proxy egress logs, formatted as: ALLOW GET https://host/path
+echo ""
+echo "Streaming egress logs..."
+echo ""
+docker compose logs proxy -f --since 0s 2>/dev/null | \
+  while IFS= read -r line; do
+    # Strip the docker compose prefix (everything up to the JSON object)
+    json="${line#*\{}"
+    if [[ -n "$json" ]]; then
+      json="{$json"
+      echo "$json" | jq -r '
+        select(.host != null) |
+        "\(.action | ascii_upcase) \(.method) https://\(.host)\(.path) \(.status_code // "")"
+      ' 2>/dev/null
+    fi
+  done
