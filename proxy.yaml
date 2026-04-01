@@ -1,0 +1,26 @@
+dns:
+  listen: ":53"
+  proxy_ip: "172.20.0.2"
+
+proxy:
+  http_listen: ":80"
+  https_listen: ":443"
+
+tls:
+  ca_cert: "/etc/iron-proxy/ca.crt"
+  ca_key: "/etc/iron-proxy/ca.key"
+
+transforms:
+  - name: allowlist
+    config:
+      domains:
+        - "github.com"
+        - "*.github.com"
+        - "*.githubusercontent.com"
+        - "*.actions.githubusercontent.com"
+        - "*.pkg.github.com"
+      cidrs:
+        - "172.20.0.0/24"
+
+log:
+  level: "info"

@@ -1,4 +1,14 @@
 services:
+  proxy:
+    image: ironsh/iron-proxy:latest
+    volumes:
+      - ./proxy.yaml:/etc/iron-proxy/proxy.yaml:ro
+      - ./ca/ca.crt:/etc/iron-proxy/ca.crt:ro
+      - ./ca/ca.key:/etc/iron-proxy/ca.key:ro
+    networks:
+      iron-proxy:
+        ipv4_address: 172.20.0.2
+
   runner:
     build:
       context: .
@@ -7,3 +17,15 @@ services:
       - RUNNER_NAME=${RUNNER_NAME:-actions-demo-runner}
       - RUNNER_TOKEN=${RUNNER_TOKEN}
       - RUNNER_REPO=${RUNNER_REPO}
+    dns:
+      - 172.20.0.2
+    depends_on:
+      - proxy
+    networks:
+      iron-proxy:
+
+networks:
+  iron-proxy:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
