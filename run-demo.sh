@@ -42,15 +42,5 @@ done
 echo ""
 echo "Streaming egress logs..."
 echo ""
-docker compose logs proxy -f 2>&1 | \
-  while IFS= read -r line; do
-    # Strip the docker compose prefix (everything up to the JSON object)
-    json="${line#*\{}"
-    if [[ -n "$json" ]]; then
-      json="{$json"
-      echo "$json" | jq -r '
-        select(.host != null) |
-        "\(.action | ascii_upcase) \(.method) https://\(.host)\(.path) \(.status_code // "")"
-      ' 2>/dev/null
-    fi
-  done
+exec docker compose logs proxy --follow --no-log-prefix 2>&1 | \
+  jq -r --unbuffered 'select(.host != null) | "\(.action | ascii_upcase) \(.method) https://\(.host)\(.path) \(.status_code // "")"' 2>/dev/null
