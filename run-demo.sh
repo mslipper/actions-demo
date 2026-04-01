@@ -1,7 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OWNER_REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
+# Ensure we're running against the user's fork, not the upstream repo
+GH_USER=$(gh api user -q '.login')
+UPSTREAM=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
+REPO_NAME="${UPSTREAM#*/}"
+
+if [[ "$UPSTREAM" == "${GH_USER}/"* ]]; then
+  OWNER_REPO="$UPSTREAM"
+else
+  echo "Forking ${UPSTREAM}..."
+  gh repo fork --remote=false 2>/dev/null || true
+  OWNER_REPO="${GH_USER}/${REPO_NAME}"
+  # Wait for the fork to be ready
+  for i in $(seq 1 30); do
+    if gh api "repos/${OWNER_REPO}" &>/dev/null; then
+      break
+    fi
+    sleep 2
+  done
+fi
+
 REPO_URL="https://github.com/${OWNER_REPO}"
 echo "Using repo: ${OWNER_REPO}"
 
