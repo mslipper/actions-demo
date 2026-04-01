@@ -24,11 +24,16 @@ RUNNER_TOKEN="$RUNNER_TOKEN" RUNNER_REPO="$REPO_URL" docker compose up --build -
 
 # Wait for the runner to come online
 echo "Waiting for runner to start..."
+SESSION_WARNING_SHOWN=false
 while true; do
-  line=$(docker compose logs runner --tail 1 2>/dev/null)
+  line=$(docker compose logs runner --tail 5 2>/dev/null)
   if echo "$line" | grep -q "Listening for Jobs"; then
     echo "Runner is online."
     break
+  fi
+  if [[ "$SESSION_WARNING_SHOWN" == false ]] && echo "$line" | grep -q "A session for this runner already exists"; then
+    echo "Stale session detected — the runner is reconnecting. This can take a few minutes."
+    SESSION_WARNING_SHOWN=true
   fi
   sleep 1
 done
