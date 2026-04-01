@@ -45,7 +45,8 @@ echo ""
 exec docker compose logs proxy --follow --no-log-prefix 2>&1 | \
   grep --line-buffered '^{' | \
   jq -r --unbuffered '
-    select(.audit != null) | .audit |
-    "\(.action | ascii_upcase) \(.method) https://\(.host)\(.path) \(.status_code // "")" |
-    if length > 64 then .[:30] + "..." + .[-31:] else . end
+    select(.audit != null) |
+    (.time | split(".")[0] | sub("T"; " ")) as $ts |
+    .audit | "\($ts) \(.status_code // "---") \(.action | ascii_upcase) \(.method) https://\(.host)\(.path)" |
+    if length > 96 then .[:46] + "..." + .[-47:] else . end
   '
