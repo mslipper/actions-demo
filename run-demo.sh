@@ -16,6 +16,9 @@ RUNNER_TOKEN=$(gh api "repos/${OWNER_REPO}/actions/runners/registration-token" -
 echo "Generating CA (if needed)..."
 ./generate-ca.sh
 
+echo "Cleaning up previous run..."
+docker compose down 2>/dev/null || true
+
 echo "Starting containers..."
 RUNNER_TOKEN="$RUNNER_TOKEN" RUNNER_REPO="$REPO_URL" docker compose up --build -d
 
