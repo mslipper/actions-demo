@@ -47,6 +47,13 @@ exec docker compose logs proxy --follow --no-log-prefix 2>&1 | \
   jq -r --unbuffered '
     select(.audit != null) |
     (.time | split(".")[0] | sub("T"; " ")) as $ts |
-    .audit | "\($ts) \(.status_code // "---") \(.action | ascii_upcase) \(.method) https://\(.host)\(.path)" |
-    if length > 96 then .[:46] + "..." + .[-47:] else . end
+    .audit |
+    "\($ts) \(.status_code // "---") \(.action | ascii_upcase) \(.method)" as $prefix |
+    "https://\(.host)\(.path)" as $url |
+    (96 - ($prefix | length) - 1) as $max_url |
+    if ($url | length) > $max_url then
+      $prefix + " " + $url[:($max_url - 3)] + "..."
+    else
+      $prefix + " " + $url
+    end
   '
