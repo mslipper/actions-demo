@@ -1,4 +1,4 @@
-FROM ubuntu:24.04-slim
+FROM debian:bookworm-slim
 
 ARG RUNNER_VERSION=2.333.1
 ARG TARGETARCH
