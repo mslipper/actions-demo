@@ -44,4 +44,8 @@ echo "Streaming egress logs..."
 echo ""
 exec docker compose logs proxy --follow --no-log-prefix 2>&1 | \
   grep --line-buffered '^{' | \
-  jq -r --unbuffered 'select(.audit != null) | .audit | "\(.action | ascii_upcase) \(.method) https://\(.host)\(.path) \(.status_code // "")"'
+  jq -r --unbuffered '
+    select(.audit != null) | .audit |
+    "\(.action | ascii_upcase) \(.method) https://\(.host)\(.path) \(.status_code // "")" |
+    if length > 64 then .[:30] + "..." + .[-31:] else . end
+  '
