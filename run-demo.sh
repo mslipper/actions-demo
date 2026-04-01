@@ -8,9 +8,13 @@ if [[ -z "${1:-}" ]]; then
 fi
 
 REPO_URL="$1"
-# Extract owner/repo from the URL
 OWNER_REPO="${REPO_URL#https://github.com/}"
 
-TOKEN=$(gh api "repos/${OWNER_REPO}/actions/runners/registration-token" --method POST --jq '.token')
+echo "Fetching runner registration token..."
+RUNNER_TOKEN=$(gh api "repos/${OWNER_REPO}/actions/runners/registration-token" --method POST --jq '.token')
 
-echo "$TOKEN"
+echo "Generating CA (if needed)..."
+./generate-ca.sh
+
+echo "Starting docker compose..."
+RUNNER_TOKEN="$RUNNER_TOKEN" RUNNER_REPO="$REPO_URL" docker compose up --build
